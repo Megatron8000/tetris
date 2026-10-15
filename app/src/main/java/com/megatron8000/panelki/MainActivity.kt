@@ -24,8 +24,6 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.statusBarColor = android.graphics.Color.rgb(8, 13, 31)
-        window.navigationBarColor = android.graphics.Color.rgb(8, 13, 31)
         immersiveMode()
         gameView = GameView(this)
         setContentView(gameView)
