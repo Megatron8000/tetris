@@ -467,31 +467,39 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawControlIcon(canvas: Canvas, index: Int, cx: Float, cy: Float, size: Float, color: Int) {
-        val unit = size / 7f
+        // High-contrast, conventional silhouettes: left, down, right, rotate clockwise.
+        val u = size / 8f
         when (index) {
-            0 -> { // Left arrow
-                fill(canvas, cx - unit * 3f, cy - unit, cx + unit * 3f, cy + unit, color)
-                fill(canvas, cx - unit * 3f, cy - unit * 3f, cx - unit, cy + unit * 3f, color)
-                fill(canvas, cx - unit * 4f, cy - unit * 2f, cx - unit * 2f, cy + unit * 2f, color)
+            0 -> { // ◀ left
+                fill(canvas, cx - u * 3.5f, cy - u, cx + u * 2.5f, cy + u, color)
+                fill(canvas, cx - u * 3.5f, cy - u * 3f, cx - u * 1.5f, cy + u * 3f, color)
+                fill(canvas, cx - u * 2.5f, cy - u * 2f, cx - u * 0.5f, cy + u * 2f, color)
             }
-            1 -> { // Down arrow
-                fill(canvas, cx - unit, cy - unit * 3f, cx + unit, cy + unit, color)
-                fill(canvas, cx - unit * 3f, cy, cx + unit * 3f, cy + unit * 2f, color)
-                fill(canvas, cx - unit * 2f, cy + unit, cx + unit * 2f, cy + unit * 3f, color)
+            1 -> { // ▼ down
+                fill(canvas, cx - u, cy - u * 3.5f, cx + u, cy + u * 1.5f, color)
+                fill(canvas, cx - u * 3f, cy + u * 0.5f, cx + u * 3f, cy + u * 2.5f, color)
+                fill(canvas, cx - u * 2f, cy + u * 2f, cx + u * 2f, cy + u * 3.5f, color)
             }
-            2 -> { // Right arrow
-                fill(canvas, cx - unit * 3f, cy - unit, cx + unit * 3f, cy + unit, color)
-                fill(canvas, cx + unit, cy - unit * 3f, cx + unit * 3f, cy + unit * 3f, color)
-                fill(canvas, cx + unit * 2f, cy - unit * 2f, cx + unit * 4f, cy + unit * 2f, color)
+            2 -> { // ▶ right
+                fill(canvas, cx - u * 2.5f, cy - u, cx + u * 3.5f, cy + u, color)
+                fill(canvas, cx + u * 1.5f, cy - u * 3f, cx + u * 3.5f, cy + u * 3f, color)
+                fill(canvas, cx + u * 0.5f, cy - u * 2f, cx + u * 2.5f, cy + u * 2f, color)
             }
-            else -> { // Rotate arrow, clear clockwise shape
-                fill(canvas, cx - unit * 2f, cy - unit * 3f, cx + unit * 2f, cy - unit * 2f, color)
-                fill(canvas, cx + unit * 2f, cy - unit * 3f, cx + unit * 3f, cy + unit, color)
-                fill(canvas, cx, cy + unit * 2f, cx + unit * 3f, cy + unit * 3f, color)
-                fill(canvas, cx - unit * 3f, cy, cx - unit * 2f, cy + unit * 3f, color)
-                fill(canvas, cx - unit * 3f, cy - unit * 3f, cx, cy - unit * 2f, color)
+            else -> { // ↻ clockwise rotate: circular arrow with a clear arrowhead
+                val stroke = max(2f * uiScale, u * 1.35f)
+                paint.color = color
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = stroke
+                paint.strokeCap = Paint.Cap.SQUARE
+                canvas.drawArc(cx - u * 2.5f, cy - u * 2.5f, cx + u * 2.5f, cy + u * 2.5f,
+                    -65f, 285f, false, paint)
+                paint.style = Paint.Style.FILL
+                fill(canvas, cx + u * 0.4f, cy - u * 3.8f, cx + u * 3.5f, cy - u * 1.0f, color)
+                fill(canvas, cx + u * 1.8f, cy - u * 1.5f, cx + u * 3.5f, cy + u * 0.3f, color)
             }
         }
+        paint.style = Paint.Style.FILL
+        paint.strokeWidth = 0f
     }
 
     private fun drawCenterMessage(canvas: Canvas, title: String, subtitle: String) {
