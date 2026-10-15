@@ -20,7 +20,7 @@ class GameView(context: Context) : View(context) {
     companion object {
         private const val COLS = 10
         private const val ROWS = 20
-        private const val DAY_NIGHT_SCORE_STEP = 10_000
+        private const val DAY_NIGHT_SCORE_STEP = 1_000
         private val SHAPES = arrayOf(
             intArrayOf(0x0F00, 0x2222, 0x00F0, 0x4444), // I
             intArrayOf(0x6600, 0x6600, 0x6600, 0x6600), // O
