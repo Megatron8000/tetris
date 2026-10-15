@@ -427,12 +427,14 @@ class GameView(context: Context) : View(context) {
         )
         paint.textAlign = Paint.Align.LEFT
         paint.strokeJoin = Paint.Join.MITER
-        paint.strokeWidth = max(1f, size * if (bold) 0.13f else 0.075f)
+        // Match the main title: warm light lettering with a strong dark outline,
+        // so every label stays readable over both the day and night illustrations.
+        paint.strokeWidth = max(1f, size * 0.13f)
         paint.style = Paint.Style.STROKE
         paint.color = Color.rgb(9, 18, 32)
         canvas.drawText(value, x, baseline, paint)
         paint.style = Paint.Style.FILL
-        paint.color = color
+        paint.color = Color.rgb(229, 221, 196)
         canvas.drawText(value, x, baseline, paint)
     }
 
