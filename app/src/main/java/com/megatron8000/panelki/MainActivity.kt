@@ -26,6 +26,15 @@ class MainActivity : Activity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         immersiveMode()
         gameView = GameView(this)
+        gameView.onSoundToggle = { enabled ->
+            if (enabled) {
+                music?.stop()
+                if (gameView.soundEnabled) music = RetroMusic().also { it.start() }
+            } else {
+                music?.stop()
+                music = null
+            }
+        }
         setContentView(gameView)
     }
 
