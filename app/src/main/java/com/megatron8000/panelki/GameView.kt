@@ -201,9 +201,9 @@ class GameView(context: Context) : View(context) {
 
     private fun drawHeader(canvas: Canvas, w: Float) {
         text(canvas, "ПАНЕЛЬКИ", w * 0.075f, 42f * uiScale, 29f * uiScale, Color.rgb(229, 221, 196), true)
-        text(canvas, "ТЕТРИС НОЧНОГО РАЙОНА", w * 0.08f, 62f * uiScale, 9f * uiScale, Color.rgb(119, 145, 171))
+        text(canvas, "ТЕТРИС ПАНЕЛЬНЫХ ДОМОВ", w * 0.08f, 62f * uiScale, 8f * uiScale, Color.rgb(119, 145, 171))
         text(canvas, "СЧЁТ  $score", w * 0.08f, 91f * uiScale, 14f * uiScale, Color.rgb(244, 189, 111), true)
-        text(canvas, "РЕКОРД  $best", w * 0.08f, 111f * uiScale, 10f * uiScale, Color.rgb(164, 180, 191))
+        text(canvas, "РЕКОРД  $best", w * 0.035f, 111f * uiScale, 7f * uiScale, Color.rgb(164, 180, 191))
         text(canvas, "ЛИНИИ  $cleared", w * 0.47f, 91f * uiScale, 12f * uiScale, Color.rgb(196, 204, 205))
         text(canvas, "УР. $level", w * 0.47f, 109f * uiScale, 10f * uiScale, Color.rgb(132, 166, 179))
 
@@ -381,7 +381,7 @@ class GameView(context: Context) : View(context) {
             val tw = measure(label, textSize, true)
             text(canvas, label, cx - tw / 2f, centerY + textSize * 0.35f, textSize, Color.rgb(231, 219, 187), true)
         }
-        text(canvas, "ДВИГАЙ • ПОВОРАЧИВАЙ • ПЕРЕЖИВИ НОЧЬ", w * 0.08f,
+        text(canvas, "ДВИГАЙ • ПОВОРАЧИВАЙ", w * 0.08f,
             h - 85f * uiScale, 8.5f * uiScale, Color.rgb(104, 127, 153))
     }
 
