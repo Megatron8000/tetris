@@ -244,43 +244,81 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawWindow(canvas: Canvas, x: Float, y: Float, size: Float, kind: Int, ghost: Boolean = false) {
-        val pad = max(1f, size * 0.08f)
+        // Each tetromino cell is a separate piece of facade, with a readable window inset into it.
+        // The wall tile and dark outline make the Tetris cell silhouette clear even on a small screen.
+        val pad = max(1f, size * 0.055f)
         val l = x + pad
         val t = y + pad
         val r = x + size - pad
         val b = y + size - pad
+        val alpha = if (ghost) 78 else 255
+
+        val wall = when (kind % 7) {
+            0 -> Color.rgb(190, 183, 160) // pale tiled facade
+            1 -> Color.rgb(224, 177, 91)  // warm yellow plaster
+            2 -> Color.rgb(174, 190, 177) // faded green-grey
+            3 -> Color.rgb(156, 170, 179) // cold concrete
+            4 -> Color.rgb(181, 166, 145) // aged panel
+            5 -> Color.rgb(166, 190, 198) // blue-grey facade
+            else -> Color.rgb(205, 166, 126)
+        }
         val frame = when (kind % 7) {
-            4 -> Color.rgb(88, 68, 57)
-            6 -> Color.rgb(108, 83, 62)
-            else -> Color.rgb(177, 166, 143)
+            1, 6 -> Color.rgb(104, 70, 48) // old brown frame
+            2 -> Color.rgb(70, 126, 132)
+            3, 4 -> Color.rgb(91, 99, 103)
+            else -> Color.rgb(53, 113, 145) // weathered blue frame
         }
         val glass = WINDOW_GLASS[kind % WINDOW_GLASS.size]
-        val alpha = if (ghost) 95 else 255
-        fill(canvas, l, t, r, b, withAlpha(Color.rgb(39, 39, 43), alpha))
-        fill(canvas, l + pad * .35f, t + pad * .35f, r - pad * .35f, b - pad * .35f, withAlpha(frame, alpha))
 
-        val insideL = l + pad * 0.72f
-        val insideT = t + pad * 0.72f
-        val insideR = r - pad * 0.72f
-        val insideB = b - pad * 0.72f
-        val gap = max(1f, size * 0.045f)
-        val mid = (insideL + insideR) / 2f
-        val paneColor = if (WINDOW_LIGHTS[kind % WINDOW_LIGHTS.size]) {
-            if (kind % 2 == 0) Color.rgb(246, 177, 81) else Color.rgb(255, 203, 107)
+        // Visible outer block: dark keyline, then a little wall around the window.
+        fill(canvas, l, t, r, b, withAlpha(Color.rgb(5, 10, 18), alpha))
+        fill(canvas, l + pad * 0.55f, t + pad * 0.55f, r - pad * 0.55f, b - pad * 0.55f,
+            withAlpha(wall, alpha))
+
+        // Recess and frame. The window is deliberately smaller than the block, like the references.
+        val marginX = size * 0.17f
+        val marginY = size * 0.14f
+        val wl = l + marginX
+        val wt = t + marginY
+        val wr = r - marginX
+        val wb = b - marginY
+        fill(canvas, wl - pad * 0.35f, wt - pad * 0.35f, wr + pad * 0.35f, wb + pad * 0.35f,
+            withAlpha(Color.rgb(40, 43, 42), alpha))
+        fill(canvas, wl, wt, wr, wb, withAlpha(frame, alpha))
+
+        val frameThickness = max(1f, size * 0.075f)
+        val glassL = wl + frameThickness
+        val glassT = wt + frameThickness
+        val glassR = wr - frameThickness
+        val glassB = wb - frameThickness
+        val mid = (glassL + glassR) / 2f
+        val mullion = max(1f, size * 0.055f)
+        val pane = if (WINDOW_LIGHTS[kind % WINDOW_LIGHTS.size]) {
+            Color.rgb(255, 196, 105)
         } else glass
-        fill(canvas, insideL, insideT, mid - gap, insideB, withAlpha(paneColor, alpha))
-        fill(canvas, mid + gap, insideT, insideR, insideB, withAlpha(if (kind % 3 == 0) Color.rgb(28, 49, 70) else paneColor, alpha))
-        // Front-facing sash and reflected sky highlights: no side walls or perspective.
-        fill(canvas, mid - gap * .55f, insideT, mid + gap * .55f, insideB, withAlpha(frame, alpha))
-        fill(canvas, insideL, insideT + (insideB - insideT) * .62f, insideR, insideT + (insideB - insideT) * .62f + gap,
-            withAlpha(frame, alpha))
-        fill(canvas, insideL + gap, insideT + gap, insideL + gap * 2f, insideT + (insideB - insideT) * .35f,
-            withAlpha(Color.rgb(204, 219, 214), if (ghost) 45 else 180))
+        val darkPane = if (WINDOW_LIGHTS[kind % WINDOW_LIGHTS.size]) {
+            Color.rgb(232, 166, 80)
+        } else Color.rgb(30, 49, 65)
+
+        fill(canvas, glassL, glassT, mid - mullion / 2f, glassB, withAlpha(pane, alpha))
+        fill(canvas, mid + mullion / 2f, glassT, glassR, glassB, withAlpha(darkPane, alpha))
+        // Clear central upright and horizontal sash, visible even at phone scale.
+        fill(canvas, mid - mullion / 2f, wt, mid + mullion / 2f, wb, withAlpha(frame, alpha))
+        val crossY = glassT + (glassB - glassT) * 0.58f
+        val crossH = max(1f, size * 0.045f)
+        fill(canvas, glassL, crossY, glassR, crossY + crossH, withAlpha(frame, alpha))
+
+        // Small bright reflection on the glass and a distinct lower sill.
+        fill(canvas, glassL + max(1f, size * 0.04f), glassT + max(1f, size * 0.04f),
+            glassL + max(2f, size * 0.10f), crossY - max(1f, size * 0.02f),
+            withAlpha(Color.rgb(226, 235, 220), if (ghost) 35 else 210))
+        fill(canvas, wl - pad * 0.25f, wb - max(1f, size * 0.035f), wr + pad * 0.25f, wb + pad * 0.25f,
+            withAlpha(Color.rgb(219, 205, 178), alpha))
         if (WINDOW_LIGHTS[kind % WINDOW_LIGHTS.size] && !ghost) {
-            fill(canvas, insideL + gap * 2f, insideB - gap * 2f, insideR - gap, insideB - gap, Color.rgb(252, 215, 145))
+            fill(canvas, glassL + mullion, glassB - max(1f, size * 0.12f),
+                glassR - max(1f, size * 0.05f), glassB - max(1f, size * 0.05f),
+                Color.rgb(255, 220, 146))
         }
-        // Chunky sill at the bottom is viewed head-on, as a horizontal strip.
-        fill(canvas, l, b - pad * 0.4f, r, b, withAlpha(Color.rgb(207, 194, 168), alpha))
     }
 
     private fun drawPiece(canvas: Canvas, px: Int, py: Int, kind: Int, rot: Int, ghost: Boolean) {
