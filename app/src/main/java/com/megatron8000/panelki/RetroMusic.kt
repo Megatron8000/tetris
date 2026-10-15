@@ -93,8 +93,10 @@ class RetroMusic {
                 if (leadHz > 0.0) {
                     val envelope = minOf(1.0, withinStep * 7.0) *
                         minOf(1.0, (1.0 - withinStep) * 2.3)
-                    val vibrato = 1.0 + 0.0022 * sin(2.0 * PI * 4.2 * t)
-                    val phase = 2.0 * PI * leadHz * vibrato * t
+                    // Phase modulation keeps vibrato bounded; multiplying frequency by elapsed
+                    // time makes pitch drift progressively upward and can sound like a whistle.
+                    val phase = 2.0 * PI * leadHz * t +
+                        0.012 * sin(2.0 * PI * 4.2 * t)
                     value += (sin(phase) + 0.22 * sin(2.0 * phase)) * 2350.0 * envelope
                     // Soft detuned layer adds a synth chorus without a piercing high overtone.
                     value += sin(2.0 * PI * leadHz * 1.003 * t) * 380.0 * envelope
@@ -120,7 +122,9 @@ class RetroMusic {
 
                 // Smooth the combined signal slightly to tame any residual harshness.
                 lowPass += 0.24 * (value - lowPass)
-                buffer[i] = lowPass.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                // Keep headroom for the summed voices; hard clipping adds harsh upper harmonics.
+                val softened = lowPass / (1.0 + abs(lowPass) / 12000.0)
+                buffer[i] = softened.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
                 sample++
             }
             try {
