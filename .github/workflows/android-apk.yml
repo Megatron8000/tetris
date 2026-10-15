@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -30,10 +30,26 @@ jobs:
       - name: Build APK
         run: gradle --no-daemon assembleDebug
 
-      - name: Upload APK
+      - name: Prepare APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk panelki-tetris.apk
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: panelki-tetris-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: panelki-tetris.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: "ПАНЕЛЬКИ — последняя APK-сборка"
+          body: |
+            Автоматическая Android-сборка игры «ПАНЕЛЬКИ».
+            APK рассчитан на установку на Android 7.0 и новее.
+            Это debug-сборка для тестирования.
+          files: panelki-tetris.apk
+          overwrite_files: true
+          make_latest: true
