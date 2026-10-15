@@ -20,6 +20,7 @@ class GameView(context: Context) : View(context) {
     companion object {
         private const val COLS = 10
         private const val ROWS = 20
+        private const val DAY_NIGHT_SCORE_STEP = 10_000
         private val SHAPES = arrayOf(
             intArrayOf(0x0F00, 0x2222, 0x00F0, 0x4444), // I
             intArrayOf(0x6600, 0x6600, 0x6600, 0x6600), // O
@@ -140,7 +141,8 @@ class GameView(context: Context) : View(context) {
         boardLeft = (w - boardWidth) / 2f
         boardTop = max(102f * uiScale, (h - boardHeight - 190f * uiScale) * 0.45f)
 
-        drawNightSky(canvas, w, h)
+        if ((score / DAY_NIGHT_SCORE_STEP) % 2 == 0) drawNightSky(canvas, w, h)
+        else drawDaySky(canvas, w, h)
         drawHeader(canvas, w)
         drawBoard(canvas)
         val recordText = "РЕКОРД  $best"
@@ -182,6 +184,47 @@ class GameView(context: Context) : View(context) {
                     fill(canvas, x * w + (5 + col * 10) * uiScale, base - bh + (6 + row * 10) * uiScale,
                         x * w + (8 + col * 10) * uiScale, base - bh + (9 + row * 10) * uiScale,
                         Color.rgb(110, 91, 75))
+                }
+            }
+        }
+    }
+
+    private fun drawDaySky(canvas: Canvas, w: Float, h: Float) {
+        canvas.drawColor(Color.rgb(155, 205, 224))
+        fill(canvas, 0f, 0f, w, h * 0.42f, Color.rgb(119, 190, 222))
+        fill(canvas, 0f, h * 0.42f, w, h, Color.rgb(183, 211, 204))
+
+        // Pixel sun and a few soft blocky clouds.
+        val sunX = w * 0.78f
+        val sunY = h * 0.13f
+        val sunSize = 28f * uiScale
+        fill(canvas, sunX - sunSize * 0.75f, sunY - sunSize * 0.75f,
+            sunX + sunSize * 0.75f, sunY + sunSize * 0.75f, Color.rgb(255, 224, 133))
+        fill(canvas, sunX - sunSize * 0.55f, sunY - sunSize * 0.55f,
+            sunX + sunSize * 0.55f, sunY + sunSize * 0.55f, Color.rgb(255, 239, 174))
+
+        clouds.forEach { cloud ->
+            val unit = 5f * uiScale * cloud.scale
+            val x = cloud.x * w
+            val y = cloud.y * h
+            fill(canvas, x + unit, y, x + unit * 5, y + unit, Color.rgb(245, 246, 229))
+            fill(canvas, x, y + unit, x + unit * 7, y + unit * 2, Color.rgb(239, 243, 231))
+            fill(canvas, x - unit, y + unit * 2, x + unit * 8, y + unit * 3, Color.rgb(228, 238, 229))
+            fill(canvas, x + unit * 2, y + unit * 3, x + unit * 6, y + unit * 4, Color.rgb(215, 231, 226))
+        }
+
+        val base = h * 0.91f
+        fill(canvas, 0f, base, w, h, Color.rgb(106, 145, 135))
+        val blocks = floatArrayOf(0.02f, 0.13f, 0.29f, 0.43f, 0.64f, 0.79f, 0.9f)
+        blocks.forEachIndexed { i, x ->
+            val bw = w * (0.07f + (i % 3) * 0.018f)
+            val bh = h * (0.035f + (i % 4) * 0.012f)
+            fill(canvas, x * w, base - bh, x * w + bw, h, Color.rgb(125, 151, 145))
+            for (row in 0..2) for (col in 0..1) {
+                if ((i + row + col) % 3 == 0) {
+                    fill(canvas, x * w + (5 + col * 10) * uiScale, base - bh + (6 + row * 10) * uiScale,
+                        x * w + (8 + col * 10) * uiScale, base - bh + (9 + row * 10) * uiScale,
+                        Color.rgb(229, 207, 157))
                 }
             }
         }
