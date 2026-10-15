@@ -16,15 +16,22 @@ class RetroMusic {
     companion object {
         private const val SAMPLE_RATE = 22050
         private const val CHUNK = 1024
-        // Minor-key motif centered on A minor; lowered third (C) and flattened sixth (F)
-        // replace the brighter major-sounding turns.
+        // A minor / A Phrygian mood: 4 different 4-bar phrases, with pauses and low notes.
+        // The 64-step sequence changes shape before looping instead of repeating one short hook.
         private val MELODY = doubleArrayOf(
             220.00, 0.0, 261.63, 0.0, 196.00, 0.0, 174.61, 0.0,
-            164.81, 0.0, 196.00, 0.0, 220.00, 0.0, 196.00, 0.0,
-            174.61, 0.0, 164.81, 0.0, 146.83, 0.0, 164.81, 0.0,
-            196.00, 0.0, 174.61, 0.0, 164.81, 0.0, 146.83, 0.0
+            164.81, 0.0, 196.00, 0.0, 220.00, 0.0, 0.0, 0.0,
+            146.83, 0.0, 164.81, 0.0, 196.00, 0.0, 174.61, 0.0,
+            164.81, 0.0, 146.83, 0.0, 0.0, 0.0, 130.81, 0.0,
+            220.00, 0.0, 0.0, 261.63, 196.00, 0.0, 174.61, 0.0,
+            164.81, 0.0, 196.00, 0.0, 0.0, 0.0, 146.83, 0.0,
+            130.81, 0.0, 146.83, 0.0, 164.81, 0.0, 146.83, 0.0,
+            174.61, 0.0, 164.81, 0.0, 146.83, 0.0, 0.0, 0.0
         )
-        private val BASS = doubleArrayOf(55.0, 55.0, 43.65, 43.65, 49.0, 49.0, 41.20, 41.20)
+        private val BASS = doubleArrayOf(
+            55.0, 55.0, 46.25, 46.25, 43.65, 43.65, 41.20, 41.20,
+            55.0, 55.0, 46.25, 46.25, 43.65, 41.20, 38.89, 41.20
+        )
     }
 
     private val running = AtomicBoolean(false)
@@ -92,15 +99,29 @@ class RetroMusic {
                 val triangle = 4.0 * abs(bassPhase - 0.5) - 1.0
                 value += triangle * 1900.0
 
-                // A soft electronic kick every two beats and a short noise snare on the backbeat.
+                // Uneven, restrained industrial beat: kicks vary by phrase, with sparse snare and hiss.
                 val localSample = (sample % stepSamples).toDouble()
-                if (step % 8 == 0 && localSample < SAMPLE_RATE * 0.075) {
-                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.075)
-                    value += sin(2.0 * PI * (72.0 - 35.0 * localSample / (SAMPLE_RATE * 0.075)) * localSample / SAMPLE_RATE) * 2600.0 * decay
-                } else if (step % 8 == 4 && localSample < SAMPLE_RATE * 0.035) {
-                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.035)
+                val beatStep = step % 16
+                val phrase = step / 16
+                val kick = beatStep == 0 || (beatStep == 10 && phrase % 2 == 1)
+                val snare = beatStep == 6 || (beatStep == 14 && phrase == 2)
+                if (kick && localSample < SAMPLE_RATE * 0.085) {
+                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.085)
+                    value += sin(2.0 * PI * (64.0 - 39.0 * localSample / (SAMPLE_RATE * 0.085)) * localSample / SAMPLE_RATE) * 3000.0 * decay
+                } else if (snare && localSample < SAMPLE_RATE * 0.045) {
+                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.045)
                     val noise = (((sample * 1103515245L + 12345L) ushr 16) and 0x7fff).toDouble() / 16384.0 - 1.0
-                    value += noise * 650.0 * decay
+                    value += noise * 780.0 * decay
+                } else if (beatStep == 12 && phrase != 1 && localSample < SAMPLE_RATE * 0.018) {
+                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.018)
+                    val noise = (((sample * 214013L + 2531011L) ushr 16) and 0x7fff).toDouble() / 16384.0 - 1.0
+                    value += noise * 180.0 * decay
+                }
+
+                // A quiet octave shadow appears only at phrase endings, adding movement without cheer.
+                if (melodyHz > 0.0 && beatStep == 14 && phrase != 1) {
+                    val shadowPhase = (t * melodyHz * 2.0) % 1.0
+                    value += (if (shadowPhase < 0.5) 1.0 else -1.0) * 500.0 * (1.0 - withinStep)
                 }
 
                 buffer[i] = value.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
