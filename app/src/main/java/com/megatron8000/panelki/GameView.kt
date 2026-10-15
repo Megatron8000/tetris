@@ -157,9 +157,15 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawNightSky(canvas: Canvas, w: Float, h: Float) {
-        canvas.drawColor(Color.rgb(8, 13, 31))
-        fill(canvas, 0f, 0f, w, h * 0.42f, Color.rgb(10, 18, 43))
-        fill(canvas, 0f, h * 0.42f, w, h, Color.rgb(12, 21, 43))
+        canvas.drawColor(Color.rgb(7, 12, 35))
+        fill(canvas, 0f, 0f, w, h * 0.42f, Color.rgb(9, 17, 47))
+        fill(canvas, 0f, h * 0.42f, w, h, Color.rgb(13, 24, 55))
+        val moonX = w * 0.84f
+        val moonY = h * 0.16f
+        val moonSize = 17f * uiScale
+        fill(canvas, moonX - moonSize, moonY - moonSize, moonX + moonSize, moonY + moonSize, Color.rgb(210, 207, 185))
+        fill(canvas, moonX - moonSize * 0.78f, moonY - moonSize * 0.78f, moonX + moonSize * 0.78f, moonY + moonSize * 0.78f, Color.rgb(244, 226, 178))
+        fill(canvas, moonX + moonSize * 0.12f, moonY - moonSize * 0.95f, moonX + moonSize, moonY + moonSize * 0.45f, Color.rgb(9, 17, 47))
         stars.forEach { star ->
             val color = if (star.bright) Color.rgb(219, 224, 221) else Color.rgb(93, 123, 159)
             fill(canvas, star.x * w, star.y * h, star.x * w + star.size * uiScale,
@@ -171,22 +177,7 @@ class GameView(context: Context) : View(context) {
             }
         }
         clouds.forEach { drawCloud(canvas, it, w, h) }
-        // A quiet far-off skyline silhouette sits below the playfield, never behind the windows.
-        val base = h * 0.91f
-        fill(canvas, 0f, base, w, h, Color.rgb(13, 24, 43))
-        val blocks = floatArrayOf(0.02f, 0.13f, 0.29f, 0.43f, 0.64f, 0.79f, 0.9f)
-        blocks.forEachIndexed { i, x ->
-            val bw = w * (0.07f + (i % 3) * 0.018f)
-            val bh = h * (0.035f + (i % 4) * 0.012f)
-            fill(canvas, x * w, base - bh, x * w + bw, h, Color.rgb(17, 29, 48))
-            for (row in 0..2) for (col in 0..1) {
-                if ((i + row + col) % 3 == 0) {
-                    fill(canvas, x * w + (5 + col * 10) * uiScale, base - bh + (6 + row * 10) * uiScale,
-                        x * w + (8 + col * 10) * uiScale, base - bh + (9 + row * 10) * uiScale,
-                        Color.rgb(110, 91, 75))
-                }
-            }
-        }
+        drawSkyline(canvas, w, h, night = true)
     }
 
     private fun drawDaySky(canvas: Canvas, w: Float, h: Float) {
@@ -213,20 +204,63 @@ class GameView(context: Context) : View(context) {
             fill(canvas, x + unit * 2, y + unit * 3, x + unit * 6, y + unit * 4, Color.rgb(215, 231, 226))
         }
 
+        drawSkyline(canvas, w, h, night = false)
+    }
+
+    private fun drawSkyline(canvas: Canvas, w: Float, h: Float, night: Boolean) {
         val base = h * 0.91f
-        fill(canvas, 0f, base, w, h, Color.rgb(106, 145, 135))
-        val blocks = floatArrayOf(0.02f, 0.13f, 0.29f, 0.43f, 0.64f, 0.79f, 0.9f)
-        blocks.forEachIndexed { i, x ->
-            val bw = w * (0.07f + (i % 3) * 0.018f)
-            val bh = h * (0.035f + (i % 4) * 0.012f)
-            fill(canvas, x * w, base - bh, x * w + bw, h, Color.rgb(125, 151, 145))
-            for (row in 0..2) for (col in 0..1) {
-                if ((i + row + col) % 3 == 0) {
-                    fill(canvas, x * w + (5 + col * 10) * uiScale, base - bh + (6 + row * 10) * uiScale,
-                        x * w + (8 + col * 10) * uiScale, base - bh + (9 + row * 10) * uiScale,
-                        Color.rgb(229, 207, 157))
-                }
+        fill(canvas, 0f, base, w, h,
+            if (night) Color.rgb(8, 18, 35) else Color.rgb(93, 139, 111))
+
+        // Layer of distant panel buildings.
+        val xs = floatArrayOf(-0.03f, 0.08f, 0.22f, 0.37f, 0.53f, 0.68f, 0.82f, 0.93f)
+        xs.forEachIndexed { i, x ->
+            val bw = w * (0.105f + (i % 3) * 0.025f)
+            val bh = h * (0.055f + (i % 4) * 0.018f)
+            val left = x * w
+            val top = base - bh
+            val wall = if (night) {
+                intArrayOf(Color.rgb(18, 31, 52), Color.rgb(23, 37, 58), Color.rgb(28, 39, 58))[i % 3]
+            } else {
+                intArrayOf(Color.rgb(164, 184, 183), Color.rgb(196, 196, 176), Color.rgb(151, 173, 181))[i % 3]
             }
+            fill(canvas, left, top, left + bw, h, wall)
+            // Roof edge and stacked rows of windows.
+            fill(canvas, left, top, left + bw, top + 2f * uiScale,
+                if (night) Color.rgb(39, 53, 73) else Color.rgb(130, 151, 157))
+            val rows = max(2, (bh / (8f * uiScale)).toInt())
+            val cols = max(2, (bw / (8f * uiScale)).toInt())
+            for (row in 0 until rows) for (col in 0 until cols) {
+                val wx = left + (col + 0.7f) * bw / (cols + 0.3f)
+                val wy = top + (row + 0.8f) * bh / (rows + 0.2f)
+                val ww = max(1f, 2.2f * uiScale)
+                val wh = max(1f, 3.2f * uiScale)
+                val lit = (i * 7 + row * 3 + col * 5) % 6 == 0
+                val color = if (night) {
+                    if (lit) Color.rgb(255, 190, 99) else Color.rgb(42, 61, 79)
+                } else {
+                    if (lit) Color.rgb(242, 215, 161) else Color.rgb(93, 132, 151)
+                }
+                fill(canvas, wx, wy, wx + ww, wy + wh, color)
+            }
+            // A few balconies make the silhouette read as Soviet panel housing.
+            if (i % 2 == 0) {
+                val balconyY = top + bh * 0.52f
+                fill(canvas, left + bw * 0.18f, balconyY, left + bw * 0.82f,
+                    balconyY + 1.5f * uiScale, if (night) Color.rgb(50, 64, 79) else Color.rgb(112, 141, 149))
+            }
+        }
+
+        // Foreground treetops and dark ground band.
+        val treeBase = h * 0.965f
+        for (i in 0..13) {
+            val tx = i * w / 13f
+            val radius = (7f + (i % 3) * 2f) * uiScale
+            val green = if (night) Color.rgb(9, 29, 37) else Color.rgb(73, 125, 75)
+            fill(canvas, tx - radius, treeBase - radius * 1.6f, tx + radius, treeBase, green)
+            fill(canvas, tx - radius * 0.65f, treeBase - radius * 2.1f,
+                tx + radius * 0.65f, treeBase - radius * 0.5f,
+                if (night) Color.rgb(12, 36, 43) else Color.rgb(91, 145, 80))
         }
     }
 
@@ -435,27 +469,27 @@ class GameView(context: Context) : View(context) {
     private fun drawControlIcon(canvas: Canvas, index: Int, cx: Float, cy: Float, size: Float, color: Int) {
         val unit = size / 7f
         when (index) {
-            0 -> {
-                fill(canvas, cx - unit * 3f, cy - unit, cx + unit, cy + unit, color)
+            0 -> { // Left arrow
+                fill(canvas, cx - unit * 3f, cy - unit, cx + unit * 3f, cy + unit, color)
                 fill(canvas, cx - unit * 3f, cy - unit * 3f, cx - unit, cy + unit * 3f, color)
+                fill(canvas, cx - unit * 4f, cy - unit * 2f, cx - unit * 2f, cy + unit * 2f, color)
             }
-            1 -> {
-                fill(canvas, cx - unit, cy - unit * 2f, cx + unit, cy + unit * 3f, color)
-                fill(canvas, cx - unit * 3f, cy + unit, cx + unit * 3f, cy + unit * 3f, color)
-                fill(canvas, cx - unit * 2f, cy + unit * 2f, cx + unit * 2f, cy + unit * 4f, color)
+            1 -> { // Down arrow
+                fill(canvas, cx - unit, cy - unit * 3f, cx + unit, cy + unit, color)
+                fill(canvas, cx - unit * 3f, cy, cx + unit * 3f, cy + unit * 2f, color)
+                fill(canvas, cx - unit * 2f, cy + unit, cx + unit * 2f, cy + unit * 3f, color)
             }
-            2 -> {
-                fill(canvas, cx - unit, cy - unit, cx + unit * 3f, cy + unit, color)
+            2 -> { // Right arrow
+                fill(canvas, cx - unit * 3f, cy - unit, cx + unit * 3f, cy + unit, color)
                 fill(canvas, cx + unit, cy - unit * 3f, cx + unit * 3f, cy + unit * 3f, color)
+                fill(canvas, cx + unit * 2f, cy - unit * 2f, cx + unit * 4f, cy + unit * 2f, color)
             }
-            else -> {
-                // Pixel-art circular arrow.
+            else -> { // Rotate arrow, clear clockwise shape
                 fill(canvas, cx - unit * 2f, cy - unit * 3f, cx + unit * 2f, cy - unit * 2f, color)
-                fill(canvas, cx + unit * 2f, cy - unit * 3f, cx + unit * 3f, cy, color)
-                fill(canvas, cx + unit, cy + unit * 2f, cx + unit * 3f, cy + unit * 3f, color)
-                fill(canvas, cx - unit * 2f, cy + unit * 2f, cx + unit, cy + unit * 3f, color)
-                fill(canvas, cx - unit * 3f, cy, cx - unit * 2f, cy + unit * 2f, color)
-                fill(canvas, cx - unit * 3f, cy - unit * 4f, cx, cy - unit * 2f, color)
+                fill(canvas, cx + unit * 2f, cy - unit * 3f, cx + unit * 3f, cy + unit, color)
+                fill(canvas, cx, cy + unit * 2f, cx + unit * 3f, cy + unit * 3f, color)
+                fill(canvas, cx - unit * 3f, cy, cx - unit * 2f, cy + unit * 3f, color)
+                fill(canvas, cx - unit * 3f, cy - unit * 3f, cx, cy - unit * 2f, color)
             }
         }
     }
