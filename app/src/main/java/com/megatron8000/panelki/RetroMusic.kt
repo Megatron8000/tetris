@@ -61,7 +61,7 @@ class RetroMusic {
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
             track = audioTrack
-            audioTrack.setVolume(0.18f)
+            audioTrack.setVolume(0.72f)
             audioTrack.play()
             worker = Thread({ synthesize(audioTrack) }, "panelki-synth").apply {
                 isDaemon = true
@@ -97,19 +97,19 @@ class RetroMusic {
                     // time makes pitch drift progressively upward and can sound like a whistle.
                     val phase = 2.0 * PI * leadHz * t +
                         0.012 * sin(2.0 * PI * 4.2 * t)
-                    value += (sin(phase) + 0.22 * sin(2.0 * phase)) * 2350.0 * envelope
+                    value += (sin(phase) + 0.22 * sin(2.0 * phase)) * 6200.0 * envelope
                     // Soft detuned layer adds a synth chorus without a piercing high overtone.
-                    value += sin(2.0 * PI * leadHz * 1.003 * t) * 380.0 * envelope
+                    value += sin(2.0 * PI * leadHz * 1.003 * t) * 1050.0 * envelope
                 }
 
                 // Smooth sub-bass with gentle movement; no bright transient.
                 val bassPhase = 2.0 * PI * bassHz * t
-                value += (sin(bassPhase) + 0.16 * sin(2.0 * bassPhase)) * 2050.0
+                value += (sin(bassPhase) + 0.16 * sin(2.0 * bassPhase)) * 5200.0
 
                 // Low, sustained chord bed made from sine waves rather than a buzzy sawtooth.
                 val chordPhase = 2.0 * PI * chordHz * t
                 val chordPulse = 0.82 + 0.18 * sin(2.0 * PI * 0.08 * t)
-                value += (sin(chordPhase) + 0.12 * sin(2.0 * chordPhase)) * 620.0 * chordPulse
+                value += (sin(chordPhase) + 0.12 * sin(2.0 * chordPhase)) * 1450.0 * chordPulse
 
                 // Muted low kick, intentionally restrained.
                 val localSample = sample % stepSamples
