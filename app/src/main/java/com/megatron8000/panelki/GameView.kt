@@ -361,39 +361,61 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawControlIcon(canvas: Canvas, index: Int, cx: Float, cy: Float, size: Float, color: Int) {
-        // High-contrast, conventional silhouettes: left, down, right, rotate clockwise.
-        val u = size / 8f
+        // Match the reference controls: clean solid triangles and a thin clockwise rotate arrow.
+        val halfW = size * 0.36f
+        val halfH = size * 0.40f
+        val path = android.graphics.Path()
         when (index) {
-            0 -> { // ◀ left
-                fill(canvas, cx - u * 3.5f, cy - u, cx + u * 2.5f, cy + u, color)
-                fill(canvas, cx - u * 3.5f, cy - u * 3f, cx - u * 1.5f, cy + u * 3f, color)
-                fill(canvas, cx - u * 2.5f, cy - u * 2f, cx - u * 0.5f, cy + u * 2f, color)
+            0 -> { // left-pointing triangle
+                path.moveTo(cx - halfW, cy)
+                path.lineTo(cx + halfW * 0.72f, cy - halfH)
+                path.lineTo(cx + halfW * 0.72f, cy + halfH)
+                path.close()
+                paint.color = color
+                paint.style = Paint.Style.FILL
+                canvas.drawPath(path, paint)
             }
-            1 -> { // ▼ down
-                fill(canvas, cx - u, cy - u * 3.5f, cx + u, cy + u * 1.5f, color)
-                fill(canvas, cx - u * 3f, cy + u * 0.5f, cx + u * 3f, cy + u * 2.5f, color)
-                fill(canvas, cx - u * 2f, cy + u * 2f, cx + u * 2f, cy + u * 3.5f, color)
+            1 -> { // down-pointing triangle
+                path.moveTo(cx - halfW, cy - halfH * 0.72f)
+                path.lineTo(cx + halfW, cy - halfH * 0.72f)
+                path.lineTo(cx, cy + halfH)
+                path.close()
+                paint.color = color
+                paint.style = Paint.Style.FILL
+                canvas.drawPath(path, paint)
             }
-            2 -> { // ▶ right
-                fill(canvas, cx - u * 2.5f, cy - u, cx + u * 3.5f, cy + u, color)
-                fill(canvas, cx + u * 1.5f, cy - u * 3f, cx + u * 3.5f, cy + u * 3f, color)
-                fill(canvas, cx + u * 0.5f, cy - u * 2f, cx + u * 2.5f, cy + u * 2f, color)
+            2 -> { // right-pointing triangle
+                path.moveTo(cx + halfW, cy)
+                path.lineTo(cx - halfW * 0.72f, cy - halfH)
+                path.lineTo(cx - halfW * 0.72f, cy + halfH)
+                path.close()
+                paint.color = color
+                paint.style = Paint.Style.FILL
+                canvas.drawPath(path, paint)
             }
-            else -> { // ↻ clockwise rotate: circular arrow with a clear arrowhead
-                val stroke = max(2f * uiScale, u * 1.35f)
+            else -> { // clockwise circular arrow
+                val radius = size * 0.31f
+                val stroke = max(1.8f * uiScale, size * 0.075f)
                 paint.color = color
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = stroke
-                paint.strokeCap = Paint.Cap.SQUARE
-                canvas.drawArc(cx - u * 2.5f, cy - u * 2.5f, cx + u * 2.5f, cy + u * 2.5f,
-                    -65f, 285f, false, paint)
+                paint.strokeCap = Paint.Cap.ROUND
+                paint.strokeJoin = Paint.Join.ROUND
+                canvas.drawArc(cx - radius, cy - radius, cx + radius, cy + radius,
+                    -52f, 292f, false, paint)
                 paint.style = Paint.Style.FILL
-                fill(canvas, cx + u * 0.4f, cy - u * 3.8f, cx + u * 3.5f, cy - u * 1.0f, color)
-                fill(canvas, cx + u * 1.8f, cy - u * 1.5f, cx + u * 3.5f, cy + u * 0.3f, color)
+                path.reset()
+                path.moveTo(cx + radius * 0.48f, cy - radius * 1.38f)
+                path.lineTo(cx + radius * 1.28f, cy - radius * 1.18f)
+                path.lineTo(cx + radius * 0.78f, cy - radius * 0.58f)
+                path.close()
+                canvas.drawPath(path, paint)
             }
         }
         paint.style = Paint.Style.FILL
         paint.strokeWidth = 0f
+        paint.strokeCap = Paint.Cap.BUTT
+        paint.strokeJoin = Paint.Join.MITER
     }
 
     private fun drawCenterMessage(canvas: Canvas, title: String, subtitle: String) {
