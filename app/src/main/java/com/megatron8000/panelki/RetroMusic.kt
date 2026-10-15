@@ -1,0 +1,129 @@
+package com.megatron8000.panelki
+
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
+
+/**
+ * Small original procedural chiptune: square-wave melody, subdued bass and sparse drum hits.
+ * No recordings or melodies from existing artists are used.
+ */
+class RetroMusic {
+    companion object {
+        private const val SAMPLE_RATE = 22050
+        private const val CHUNK = 1024
+        private val MELODY = doubleArrayOf(
+            220.00, 0.0, 261.63, 0.0, 196.00, 0.0, 174.61, 0.0,
+            220.00, 0.0, 261.63, 293.66, 261.63, 0.0, 196.00, 0.0,
+            164.81, 0.0, 196.00, 0.0, 220.00, 0.0, 261.63, 0.0,
+            293.66, 0.0, 261.63, 0.0, 220.00, 0.0, 196.00, 0.0
+        )
+        private val BASS = doubleArrayOf(55.0, 49.0, 43.65, 49.0, 55.0, 65.41, 58.27, 49.0)
+    }
+
+    private val running = AtomicBoolean(false)
+    @Volatile private var track: AudioTrack? = null
+    @Volatile private var worker: Thread? = null
+
+    fun start() {
+        if (!running.compareAndSet(false, true)) return
+        try {
+            val minBuffer = AudioTrack.getMinBufferSize(
+                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT
+            ).coerceAtLeast(CHUNK * 2)
+            val audioTrack = AudioTrack.Builder()
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_GAME)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setSampleRate(SAMPLE_RATE)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build()
+                )
+                .setBufferSizeInBytes(minBuffer * 2)
+                .setTransferMode(AudioTrack.MODE_STREAM)
+                .build()
+            track = audioTrack
+            audioTrack.setVolume(0.22f)
+            audioTrack.play()
+            worker = Thread({ synthesize(audioTrack) }, "panelki-chiptune").apply {
+                isDaemon = true
+                start()
+            }
+        } catch (_: Exception) {
+            running.set(false)
+            track?.release()
+            track = null
+        }
+    }
+
+    private fun synthesize(audioTrack: AudioTrack) {
+        val buffer = ShortArray(CHUNK)
+        val stepSamples = SAMPLE_RATE * 60.0 / 108.0 / 4.0
+        var sample = 0L
+        while (running.get()) {
+            for (i in buffer.indices) {
+                val step = ((sample / stepSamples).toInt() % MELODY.size)
+                val withinStep = (sample % stepSamples).toDouble() / stepSamples
+                val melodyHz = MELODY[step]
+                val bassHz = BASS[(step / 4) % BASS.size]
+                val t = sample.toDouble() / SAMPLE_RATE
+                var value = 0.0
+
+                if (melodyHz > 0.0) {
+                    val phase = (t * melodyHz) % 1.0
+                    val square = if (phase < 0.5) 1.0 else -1.0
+                    val fade = minOf(1.0, withinStep * 12.0, (1.0 - withinStep) * 8.0)
+                    value += square * 4200.0 * fade
+                }
+
+                val bassPhase = (t * bassHz) % 1.0
+                val triangle = 4.0 * abs(bassPhase - 0.5) - 1.0
+                value += triangle * 1900.0
+
+                // A soft electronic kick every two beats and a short noise snare on the backbeat.
+                val localSample = (sample % stepSamples).toDouble()
+                if (step % 8 == 0 && localSample < SAMPLE_RATE * 0.075) {
+                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.075)
+                    value += sin(2.0 * PI * (72.0 - 35.0 * localSample / (SAMPLE_RATE * 0.075)) * localSample / SAMPLE_RATE) * 2600.0 * decay
+                } else if (step % 8 == 4 && localSample < SAMPLE_RATE * 0.035) {
+                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.035)
+                    val noise = (((sample * 1103515245L + 12345L) ushr 16) and 0x7fff).toDouble() / 16384.0 - 1.0
+                    value += noise * 650.0 * decay
+                }
+
+                buffer[i] = value.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                sample++
+            }
+            try {
+                if (audioTrack.write(buffer, 0, buffer.size) < 0) break
+            } catch (_: IllegalStateException) {
+                break
+            }
+        }
+    }
+
+    fun stop() {
+        if (!running.getAndSet(false)) return
+        val oldTrack = track
+        track = null
+        try {
+            oldTrack?.pause()
+            oldTrack?.flush()
+            oldTrack?.release()
+        } catch (_: Exception) {
+            // Audio may already have been released by Android during a lifecycle transition.
+        }
+        worker?.interrupt()
+        worker = null
+    }
+}
