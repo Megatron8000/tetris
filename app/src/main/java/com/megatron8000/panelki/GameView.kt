@@ -213,8 +213,21 @@ class GameView(context: Context) : View(context) {
         // Sound toggle and pause controls.
         fill(canvas, w - 78f * uiScale, 16f * uiScale, w - 49f * uiScale, 44f * uiScale,
             if (soundEnabled) Color.rgb(30, 45, 68) else Color.rgb(74, 42, 48))
-        text(canvas, if (soundEnabled) "♫" else "×", w - 72f * uiScale, 37f * uiScale,
-            17f * uiScale, if (soundEnabled) Color.rgb(235, 211, 164) else Color.rgb(225, 133, 125), true)
+        val soundColor = if (soundEnabled) Color.rgb(235, 211, 164) else Color.rgb(225, 133, 125)
+        if (soundEnabled) {
+            // Draw the music note as a 14 px-high pixel icon, matching the pause symbol.
+            fill(canvas, w - 64f * uiScale, 22f * uiScale, w - 61f * uiScale, 34f * uiScale, soundColor)
+            fill(canvas, w - 61f * uiScale, 22f * uiScale, w - 55f * uiScale, 25f * uiScale, soundColor)
+            fill(canvas, w - 68f * uiScale, 31f * uiScale, w - 63f * uiScale, 35f * uiScale, soundColor)
+        } else {
+            // Muted symbol uses the same 14 x 14 px visual bounds.
+            fill(canvas, w - 67f * uiScale, 23f * uiScale, w - 65f * uiScale, 25f * uiScale, soundColor)
+            fill(canvas, w - 65f * uiScale, 25f * uiScale, w - 61f * uiScale, 29f * uiScale, soundColor)
+            fill(canvas, w - 61f * uiScale, 29f * uiScale, w - 57f * uiScale, 33f * uiScale, soundColor)
+            fill(canvas, w - 57f * uiScale, 33f * uiScale, w - 55f * uiScale, 35f * uiScale, soundColor)
+            fill(canvas, w - 67f * uiScale, 33f * uiScale, w - 65f * uiScale, 35f * uiScale, soundColor)
+            fill(canvas, w - 65f * uiScale, 29f * uiScale, w - 61f * uiScale, 33f * uiScale, soundColor)
+        }
         fill(canvas, w - 43f * uiScale, 16f * uiScale, w - 15f * uiScale, 44f * uiScale, Color.rgb(30, 45, 68))
         fill(canvas, w - 36f * uiScale, 23f * uiScale, w - 32f * uiScale, 37f * uiScale, Color.rgb(235, 211, 164))
         fill(canvas, w - 26f * uiScale, 23f * uiScale, w - 22f * uiScale, 37f * uiScale, Color.rgb(235, 211, 164))
