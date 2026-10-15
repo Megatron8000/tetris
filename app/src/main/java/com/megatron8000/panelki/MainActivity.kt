@@ -29,7 +29,7 @@ class MainActivity : Activity() {
         gameView.onSoundToggle = { enabled ->
             if (enabled) {
                 music?.stop()
-                music = RetroMusic().also { it.start() }
+                music = RetroMusic(this).also { it.start() }
             } else {
                 music?.stop()
                 music = null
