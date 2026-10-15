@@ -211,7 +211,7 @@ class GameView(context: Context) : View(context) {
         fill(canvas, boardLeft - 4f * uiScale, boardTop - 4f * uiScale,
             boardLeft + boardWidth + 4f * uiScale, boardTop + boardHeight + 4f * uiScale,
             Color.rgb(76, 82, 91))
-        fill(canvas, boardLeft, boardTop, boardLeft + boardWidth, boardTop + boardHeight, Color.rgb(12, 22, 40))
+        fill(canvas, boardLeft, boardTop, boardLeft + boardWidth, boardTop + boardHeight, Color.argb(179, 12, 22, 40))
         for (y in 0 until ROWS) {
             for (x in 0 until COLS) {
                 val left = boardLeft + x * cell
@@ -221,10 +221,10 @@ class GameView(context: Context) : View(context) {
                 } else {
                     fill(canvas, left + 1f * uiScale, top + 1f * uiScale,
                         left + cell - 1f * uiScale, top + cell - 1f * uiScale,
-                        if ((x + y) % 2 == 0) Color.rgb(14, 26, 46) else Color.rgb(15, 27, 47))
+                        if ((x + y) % 2 == 0) Color.argb(179, 14, 26, 46) else Color.argb(179, 15, 27, 47))
                     // Very subtle cell seams make the playfield legible without competing with sprites.
                     fill(canvas, left, top + cell - uiScale, left + cell, top + cell,
-                        Color.rgb(23, 36, 56))
+                        Color.argb(179, 23, 36, 56))
                 }
             }
         }
