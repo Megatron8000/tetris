@@ -9,16 +9,13 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * Original procedural soundtrack for PANELKI: slow, bleak post-punk / coldwave atmosphere.
- * The tune is newly composed; it does not reproduce any existing recording or melody.
+ * Original synthesizer soundtrack for PANELKI: slow, dark and atmospheric.
+ * Smoother oscillator shapes avoid the harsh, high-frequency edge of raw square waves.
  */
 class RetroMusic {
     companion object {
-        private const val SAMPLE_RATE = 22050
+        private const val SAMPLE_RATE = 44100
         private const val CHUNK = 1024
-
-        // Original four-bar motif in D minor, written as eighth-note steps.
-        // Repeated motifs and small variations make it feel like a song, not random beeps.
         private val LEAD = doubleArrayOf(
             146.83, 0.0, 174.61, 0.0, 196.00, 0.0, 174.61, 0.0,
             146.83, 0.0, 130.81, 0.0, 146.83, 0.0, 0.0, 0.0,
@@ -64,9 +61,9 @@ class RetroMusic {
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
             track = audioTrack
-            audioTrack.setVolume(0.22f)
+            audioTrack.setVolume(0.18f)
             audioTrack.play()
-            worker = Thread({ synthesize(audioTrack) }, "panelki-chiptune").apply {
+            worker = Thread({ synthesize(audioTrack) }, "panelki-synth").apply {
                 isDaemon = true
                 start()
             }
@@ -79,9 +76,9 @@ class RetroMusic {
 
     private fun synthesize(audioTrack: AudioTrack) {
         val buffer = ShortArray(CHUNK)
-        // About 72 BPM; each melody step is an eighth note.
         val stepSamples = SAMPLE_RATE * 60.0 / 72.0 / 2.0
         var sample = 0L
+        var lowPass = 0.0
         while (running.get()) {
             for (i in buffer.indices) {
                 val step = ((sample / stepSamples).toInt() % LEAD.size)
@@ -92,50 +89,38 @@ class RetroMusic {
                 val chordHz = CHORD[(step / 16) % CHORD.size]
                 var value = 0.0
 
-                // Hollow pulse-wave lead with a short attack and a little tail between notes.
+                // Rounded, warm lead: fundamental plus a quiet second harmonic, no hard square wave.
                 if (leadHz > 0.0) {
-                    val phase = (t * leadHz) % 1.0
-                    val pulse = if (phase < 0.38) 1.0 else -1.0
-                    val envelope = minOf(1.0, withinStep * 9.0) * minOf(1.0, (1.0 - withinStep) * 3.0)
-                    value += pulse * 1250.0 * envelope
-                    // Quiet detuned layer gives the lead a slightly worn, analog edge.
-                    val phase2 = (t * leadHz * 1.006) % 1.0
-                    value += (if (phase2 < 0.42) 1.0 else -1.0) * 250.0 * envelope
+                    val envelope = minOf(1.0, withinStep * 7.0) *
+                        minOf(1.0, (1.0 - withinStep) * 2.3)
+                    val vibrato = 1.0 + 0.0022 * sin(2.0 * PI * 4.2 * t)
+                    val phase = 2.0 * PI * leadHz * vibrato * t
+                    value += (sin(phase) + 0.22 * sin(2.0 * phase)) * 2350.0 * envelope
+                    // Soft detuned layer adds a synth chorus without a piercing high overtone.
+                    value += sin(2.0 * PI * leadHz * 1.003 * t) * 380.0 * envelope
                 }
 
-                // Repeating low bass ostinato anchors the melody and supplies forward motion.
-                val bassPhase = (t * bassHz) % 1.0
-                val bassTriangle = 1.0 - 4.0 * abs(bassPhase - 0.5)
-                val bassGate = if (step % 2 == 0) 1.0 else 0.68
-                value += bassTriangle * 1550.0 * bassGate
+                // Smooth sub-bass with gentle movement; no bright transient.
+                val bassPhase = 2.0 * PI * bassHz * t
+                value += (sin(bassPhase) + 0.16 * sin(2.0 * bassPhase)) * 2050.0
 
-                // Dark sustained chord tone, soft enough to sit behind the melody.
-                val chordPhase = (t * chordHz) % 1.0
-                val chordSaw = 2.0 * chordPhase - 1.0
-                val slowPulse = 0.78 + 0.22 * sin(2.0 * PI * 0.09 * t)
-                value += chordSaw * 310.0 * slowPulse
+                // Low, sustained chord bed made from sine waves rather than a buzzy sawtooth.
+                val chordPhase = 2.0 * PI * chordHz * t
+                val chordPulse = 0.82 + 0.18 * sin(2.0 * PI * 0.08 * t)
+                value += (sin(chordPhase) + 0.12 * sin(2.0 * chordPhase)) * 620.0 * chordPulse
 
-                // Restrained, regular kick and a distant snare on alternate bars.
-                val beatStep = step % 8
+                // Muted low kick, intentionally restrained.
                 val localSample = sample % stepSamples
-                if (beatStep == 0 && localSample < SAMPLE_RATE * 0.10) {
-                    val progress = localSample.toDouble() / (SAMPLE_RATE * 0.10)
-                    val decay = 1.0 - progress
-                    value += sin(2.0 * PI * (58.0 - 22.0 * progress) * localSample / SAMPLE_RATE) * 1050.0 * decay
-                }
-                if (beatStep == 4 && (step / 8) % 2 == 1 && localSample < SAMPLE_RATE * 0.055) {
-                    val progress = localSample.toDouble() / (SAMPLE_RATE * 0.055)
-                    val noise = (((sample * 1103515245L + 12345L) ushr 16) and 0x7fff).toDouble() / 16384.0 - 1.0
-                    value += noise * 260.0 * (1.0 - progress)
+                if (step % 8 == 0 && localSample < SAMPLE_RATE * 0.12) {
+                    val progress = localSample.toDouble() / (SAMPLE_RATE * 0.12)
+                    val kickHz = 54.0 - 24.0 * progress
+                    value += sin(2.0 * PI * kickHz * localSample / SAMPLE_RATE) *
+                        680.0 * (1.0 - progress) * (1.0 - progress)
                 }
 
-                // A faint high-frequency tick appears only at the end of every second phrase.
-                if (step % 32 == 30 && withinStep < 0.08) {
-                    val noise = (((sample * 214013L + 2531011L) ushr 16) and 0x7fff).toDouble() / 16384.0 - 1.0
-                    value += noise * 100.0 * (1.0 - withinStep / 0.08)
-                }
-
-                buffer[i] = value.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                // Smooth the combined signal slightly to tame any residual harshness.
+                lowPass += 0.24 * (value - lowPass)
+                buffer[i] = lowPass.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
                 sample++
             }
             try {
