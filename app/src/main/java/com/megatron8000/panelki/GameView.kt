@@ -408,7 +408,7 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawControls(canvas: Canvas, w: Float, h: Float) {
-        val labels = arrayOf("◀", "▼", "▶", "↻", "DROP")
+        val labels = arrayOf("", "", "", "", "DROP")
         val centers = floatArrayOf(0.10f, 0.30f, 0.50f, 0.70f, 0.90f)
         val buttonW = w * 0.17f
         val buttonH = 48f * uiScale
@@ -421,11 +421,43 @@ class GameView(context: Context) : View(context) {
                 Color.rgb(5, 9, 22))
             fill(canvas, left, top, left + buttonW, top + buttonH, Color.rgb(35, 48, 68))
             fill(canvas, left, top, left + buttonW, top + 3f * uiScale, Color.rgb(97, 120, 139))
-            val textSize = if (label == "DROP") 10f * uiScale else 21f * uiScale
-            val tw = measure(label, textSize, true)
-            text(canvas, label, cx - tw / 2f, centerY + textSize * 0.35f, textSize, Color.rgb(231, 219, 187), true)
+            if (index < 4) {
+                drawControlIcon(canvas, index, cx, centerY, 21f * uiScale, Color.rgb(244, 241, 225))
+            } else {
+                val textSize = 10f * uiScale
+                val tw = measure(label, textSize, true)
+                text(canvas, label, cx - tw / 2f, centerY + textSize * 0.35f, textSize, Color.rgb(244, 241, 225), true)
+            }
         }
         // Helper caption intentionally removed.
+    }
+
+    private fun drawControlIcon(canvas: Canvas, index: Int, cx: Float, cy: Float, size: Float, color: Int) {
+        val unit = size / 7f
+        when (index) {
+            0 -> {
+                fill(canvas, cx - unit * 3f, cy - unit, cx + unit, cy + unit, color)
+                fill(canvas, cx - unit * 3f, cy - unit * 3f, cx - unit, cy + unit * 3f, color)
+            }
+            1 -> {
+                fill(canvas, cx - unit, cy - unit * 2f, cx + unit, cy + unit * 3f, color)
+                fill(canvas, cx - unit * 3f, cy + unit, cx + unit * 3f, cy + unit * 3f, color)
+                fill(canvas, cx - unit * 2f, cy + unit * 2f, cx + unit * 2f, cy + unit * 4f, color)
+            }
+            2 -> {
+                fill(canvas, cx - unit, cy - unit, cx + unit * 3f, cy + unit, color)
+                fill(canvas, cx + unit, cy - unit * 3f, cx + unit * 3f, cy + unit * 3f, color)
+            }
+            else -> {
+                // Pixel-art circular arrow.
+                fill(canvas, cx - unit * 2f, cy - unit * 3f, cx + unit * 2f, cy - unit * 2f, color)
+                fill(canvas, cx + unit * 2f, cy - unit * 3f, cx + unit * 3f, cy, color)
+                fill(canvas, cx + unit, cy + unit * 2f, cx + unit * 3f, cy + unit * 3f, color)
+                fill(canvas, cx - unit * 2f, cy + unit * 2f, cx + unit, cy + unit * 3f, color)
+                fill(canvas, cx - unit * 3f, cy, cx - unit * 2f, cy + unit * 2f, color)
+                fill(canvas, cx - unit * 3f, cy - unit * 4f, cx, cy - unit * 2f, color)
+            }
+        }
     }
 
     private fun drawCenterMessage(canvas: Canvas, title: String, subtitle: String) {
@@ -450,19 +482,25 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun text(canvas: Canvas, value: String, x: Float, baseline: Float, size: Float, color: Int, bold: Boolean = false) {
-        paint.color = color
         paint.textSize = size
-        paint.typeface = if (bold) android.graphics.Typeface.create("monospace", android.graphics.Typeface.BOLD)
-            else android.graphics.Typeface.create("monospace", android.graphics.Typeface.NORMAL)
-        paint.style = Paint.Style.FILL
+        paint.typeface = android.graphics.Typeface.create(
+            "monospace",
+            if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.BOLD
+        )
         paint.textAlign = Paint.Align.LEFT
+        paint.strokeJoin = Paint.Join.MITER
+        paint.strokeWidth = max(1f, size * if (bold) 0.13f else 0.075f)
+        paint.style = Paint.Style.STROKE
+        paint.color = Color.rgb(9, 18, 32)
+        canvas.drawText(value, x, baseline, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = color
         canvas.drawText(value, x, baseline, paint)
     }
 
     private fun measure(value: String, size: Float, bold: Boolean): Float {
         paint.textSize = size
-        paint.typeface = if (bold) android.graphics.Typeface.create("monospace", android.graphics.Typeface.BOLD)
-            else android.graphics.Typeface.create("monospace", android.graphics.Typeface.NORMAL)
+        paint.typeface = android.graphics.Typeface.create("monospace", android.graphics.Typeface.BOLD)
         return paint.measureText(value)
     }
 
