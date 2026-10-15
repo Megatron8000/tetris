@@ -5,29 +5,24 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * Original 8-bit post-punk-inspired loop: steady bass, restrained minor-key lead and dry drums.
- * This is an original melody, not a transcription of an existing song.
+ * Small original procedural chiptune: square-wave melody, subdued bass and sparse drum hits.
+ * No recordings or melodies from existing artists are used.
  */
 class RetroMusic {
     companion object {
         private const val SAMPLE_RATE = 22050
         private const val CHUNK = 1024
-
         private val MELODY = doubleArrayOf(
-            293.66, 0.0, 220.00, 0.0, 246.94, 0.0, 0.0, 196.00,
-            0.0, 220.00, 0.0, 261.63, 246.94, 0.0, 220.00, 0.0,
-            196.00, 0.0, 220.00, 0.0, 293.66, 0.0, 0.0, 261.63,
-            0.0, 246.94, 0.0, 196.00, 220.00, 0.0, 0.0, 0.0
+            220.00, 0.0, 261.63, 0.0, 196.00, 0.0, 174.61, 0.0,
+            220.00, 0.0, 261.63, 293.66, 261.63, 0.0, 196.00, 0.0,
+            164.81, 0.0, 196.00, 0.0, 220.00, 0.0, 261.63, 0.0,
+            293.66, 0.0, 261.63, 0.0, 220.00, 0.0, 196.00, 0.0
         )
-        private val BASS = doubleArrayOf(
-            55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00,
-            49.00, 49.00, 49.00, 49.00, 49.00, 49.00, 49.00, 49.00,
-            43.65, 43.65, 43.65, 43.65, 43.65, 43.65, 43.65, 43.65,
-            41.20, 41.20, 41.20, 41.20, 41.20, 41.20, 41.20, 41.20
-        )
+        private val BASS = doubleArrayOf(55.0, 49.0, 43.65, 49.0, 55.0, 65.41, 58.27, 49.0)
     }
 
     private val running = AtomicBoolean(false)
@@ -39,9 +34,7 @@ class RetroMusic {
         try {
             val minBuffer = AudioTrack.getMinBufferSize(
                 SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT
-            )
-            if (minBuffer <= 0) throw IllegalStateException("AudioTrack format unavailable")
-
+            ).coerceAtLeast(CHUNK * 2)
             val audioTrack = AudioTrack.Builder()
                 .setAudioAttributes(
                     AudioAttributes.Builder()
@@ -56,97 +49,64 @@ class RetroMusic {
                         .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                         .build()
                 )
-                .setBufferSizeInBytes(maxOf(minBuffer * 2, CHUNK * 4))
+                .setBufferSizeInBytes(minBuffer * 2)
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
-
-            if (audioTrack.state != AudioTrack.STATE_INITIALIZED) {
-                audioTrack.release()
-                throw IllegalStateException("AudioTrack failed to initialize")
-            }
-
             track = audioTrack
-            audioTrack.setVolume(0.55f)
+            audioTrack.setVolume(0.22f)
             audioTrack.play()
-            worker = Thread({ synthesize(audioTrack) }, "panelki-8bit-postpunk").apply {
+            worker = Thread({ synthesize(audioTrack) }, "panelki-chiptune").apply {
                 isDaemon = true
                 start()
             }
         } catch (_: Exception) {
             running.set(false)
-            try { track?.release() } catch (_: Exception) { }
+            track?.release()
             track = null
         }
     }
 
     private fun synthesize(audioTrack: AudioTrack) {
         val buffer = ShortArray(CHUNK)
-        val bpm = 112.0
-        val samplesPerStep = SAMPLE_RATE * 60.0 / bpm / 4.0
+        val stepSamples = SAMPLE_RATE * 60.0 / 108.0 / 4.0
         var sample = 0L
-        var melodyPhase = 0.0
-        var bassPhase = 0.0
-
         while (running.get()) {
             for (i in buffer.indices) {
-                val step = ((sample / samplesPerStep).toInt() % MELODY.size)
-                val withinStep = (sample % samplesPerStep) / samplesPerStep
+                val step = ((sample / stepSamples).toInt() % MELODY.size)
+                val withinStep = (sample % stepSamples).toDouble() / stepSamples
                 val melodyHz = MELODY[step]
                 val bassHz = BASS[(step / 4) % BASS.size]
-                var mix = 0.0
-
-                // Bass is the anchor: a warm, slightly gritty pulse, kept well below clipping.
-                bassPhase += bassHz / SAMPLE_RATE
-                if (bassPhase >= 1.0) bassPhase -= 1.0
-                val bassWave = sin(2.0 * PI * bassPhase)
-                val bassEdge = if (bassPhase < 0.5) 1.0 else -1.0
-                mix += (bassWave * 0.72 + bassEdge * 0.28) * 7600.0 *
-                    if (step % 4 == 0) 1.0 else 0.78
+                val t = sample.toDouble() / SAMPLE_RATE
+                var value = 0.0
 
                 if (melodyHz > 0.0) {
-                    melodyPhase += melodyHz / SAMPLE_RATE
-                    if (melodyPhase >= 1.0) melodyPhase -= 1.0
-                    // Sine lead prevents the piercing square-wave squeal on phone speakers.
-                    val attack = minOf(1.0, withinStep * 16.0)
-                    val release = minOf(1.0, (1.0 - withinStep) * 5.0)
-                    mix += sin(2.0 * PI * melodyPhase) * 3600.0 * attack * release
+                    val phase = (t * melodyHz) % 1.0
+                    val square = if (phase < 0.5) 1.0 else -1.0
+                    val fade = minOf(1.0, withinStep * 12.0, (1.0 - withinStep) * 8.0)
+                    value += square * 4200.0 * fade
                 }
 
-                val localSample = (sample % samplesPerStep).toDouble()
-                val beat = step % 16
+                val bassPhase = (t * bassHz) % 1.0
+                val triangle = 4.0 * abs(bassPhase - 0.5) - 1.0
+                value += triangle * 1900.0
 
-                if (beat % 4 == 0 && localSample < SAMPLE_RATE * 0.09) {
-                    val duration = SAMPLE_RATE * 0.09
-                    val progress = localSample / duration
-                    val frequency = 86.0 - 38.0 * progress
-                    mix += sin(2.0 * PI * frequency * localSample / SAMPLE_RATE) *
-                        3200.0 * (1.0 - progress) * if (beat == 0) 1.0 else 0.72
+                // A soft electronic kick every two beats and a short noise snare on the backbeat.
+                val localSample = (sample % stepSamples).toDouble()
+                if (step % 8 == 0 && localSample < SAMPLE_RATE * 0.075) {
+                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.075)
+                    value += sin(2.0 * PI * (72.0 - 35.0 * localSample / (SAMPLE_RATE * 0.075)) * localSample / SAMPLE_RATE) * 2600.0 * decay
+                } else if (step % 8 == 4 && localSample < SAMPLE_RATE * 0.035) {
+                    val decay = 1.0 - localSample / (SAMPLE_RATE * 0.035)
+                    val noise = (((sample * 1103515245L + 12345L) ushr 16) and 0x7fff).toDouble() / 16384.0 - 1.0
+                    value += noise * 650.0 * decay
                 }
 
-                if ((beat == 4 || beat == 12) && localSample < SAMPLE_RATE * 0.05) {
-                    val progress = localSample / (SAMPLE_RATE * 0.05)
-                    val noise = (((sample * 1103515245L + 12345L) ushr 16) and 0x7fff)
-                        .toDouble() / 16384.0 - 1.0
-                    mix += noise * 900.0 * (1.0 - progress)
-                }
-
-                if (step % 2 == 1 && localSample < SAMPLE_RATE * 0.008) {
-                    val progress = localSample / (SAMPLE_RATE * 0.008)
-                    val noise = (((sample * 1664525L + 1013904223L) ushr 17) and 0x7fff)
-                        .toDouble() / 16384.0 - 1.0
-                    mix += noise * 220.0 * (1.0 - progress)
-                }
-
-                // Fixed headroom prevents clipping when bass, lead and drums overlap.
-                buffer[i] = (mix * 0.62).toInt()
-                    .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                buffer[i] = value.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
                 sample++
             }
-
             try {
-                val written = audioTrack.write(buffer, 0, buffer.size, AudioTrack.WRITE_BLOCKING)
-                if (written < 0) break
-            } catch (_: Exception) {
+                if (audioTrack.write(buffer, 0, buffer.size) < 0) break
+            } catch (_: IllegalStateException) {
                 break
             }
         }
@@ -154,16 +114,6 @@ class RetroMusic {
 
     fun stop() {
         if (!running.getAndSet(false)) return
-
-        val oldWorker = worker
-        worker = null
-        oldWorker?.interrupt()
-        try {
-            oldWorker?.join(250)
-        } catch (_: InterruptedException) {
-            Thread.currentThread().interrupt()
-        }
-
         val oldTrack = track
         track = null
         try {
@@ -171,7 +121,9 @@ class RetroMusic {
             oldTrack?.flush()
             oldTrack?.release()
         } catch (_: Exception) {
-            // Audio may already have been released during a lifecycle transition.
+            // Audio may already have been released by Android during a lifecycle transition.
         }
+        worker?.interrupt()
+        worker = null
     }
 }
