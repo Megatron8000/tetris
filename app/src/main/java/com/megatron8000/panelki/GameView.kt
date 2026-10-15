@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.view.MotionEvent
@@ -76,7 +75,6 @@ class GameView(context: Context) : View(context) {
     private var paused = false
     private var gameOver = false
     private var lastFrameTime = 0L
-    private var scoreFlash = 0
     private var boardLeft = 0f
     private var boardTop = 0f
     private var cell = 0f
@@ -564,7 +562,6 @@ class GameView(context: Context) : View(context) {
                 else -> 800 * level
             }
             level = cleared / 10 + 1
-            scoreFlash = 18
         }
     }
 
