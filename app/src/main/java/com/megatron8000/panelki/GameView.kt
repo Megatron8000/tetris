@@ -13,6 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.random.Random
 
 /**
  * Entire game is drawn directly to Canvas to keep the image crisp and dependency-free.
