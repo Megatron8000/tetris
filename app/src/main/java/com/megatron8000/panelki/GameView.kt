@@ -1,7 +1,10 @@
 package com.megatron8000.panelki
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.RectF
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Handler
@@ -41,6 +44,14 @@ class GameView(context: Context) : View(context) {
         )
         private val WINDOW_LIGHTS = booleanArrayOf(false, true, false, false, false, false, true)
     }
+
+    private val nightBackground: Bitmap = BitmapFactory.decodeStream(
+        context.assets.open("photo_2026-10-15_22-06-02.jpg")
+    )
+    private val dayBackground: Bitmap = BitmapFactory.decodeStream(
+        context.assets.open("photo_2026-10-15_22-05-31.jpg")
+    )
+    private val backgroundRect = RectF()
 
     private val paint = Paint().apply {
         isAntiAlias = false
@@ -141,8 +152,12 @@ class GameView(context: Context) : View(context) {
         boardLeft = (w - boardWidth) / 2f
         boardTop = max(102f * uiScale, (h - boardHeight - 190f * uiScale) * 0.45f)
 
-        if ((score / DAY_NIGHT_SCORE_STEP) % 2 == 0) drawNightSky(canvas, w, h)
-        else drawDaySky(canvas, w, h)
+        drawBackground(
+            canvas,
+            if ((score / DAY_NIGHT_SCORE_STEP) % 2 == 0) nightBackground else dayBackground,
+            w,
+            h
+        )
         drawHeader(canvas, w)
         drawBoard(canvas)
         val recordText = "РЕКОРД  $best"
@@ -154,6 +169,19 @@ class GameView(context: Context) : View(context) {
         if (!started) drawCenterMessage(canvas, "НОВАЯ ИГРА", "КОСНИСЬ ЭКРАНА")
         else if (paused) drawCenterMessage(canvas, "ПАУЗА", "КОСНИСЬ ДЛЯ ПРОДОЛЖЕНИЯ")
         else if (gameOver) drawCenterMessage(canvas, "ИГРА ОКОНЧЕНА", "КОСНИСЬ ДЛЯ РЕСТАРТА")
+    }
+
+    private fun drawBackground(canvas: Canvas, bitmap: Bitmap, w: Float, h: Float) {
+        // Scale the supplied image to fill the screen, cropping only when aspect ratios differ.
+        val scale = max(w / bitmap.width, h / bitmap.height)
+        val scaledWidth = bitmap.width * scale
+        val scaledHeight = bitmap.height * scale
+        val left = (w - scaledWidth) / 2f
+        val top = (h - scaledHeight) / 2f
+        backgroundRect.set(left, top, left + scaledWidth, top + scaledHeight)
+        paint.alpha = 255
+        paint.isFilterBitmap = false
+        canvas.drawBitmap(bitmap, null, backgroundRect, paint)
     }
 
     private fun drawNightSky(canvas: Canvas, w: Float, h: Float) {
