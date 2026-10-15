@@ -44,12 +44,8 @@ class GameView(context: Context) : View(context) {
         private val WINDOW_LIGHTS = booleanArrayOf(false, true, false, false, false, false, true)
     }
 
-    private val nightBackground: Bitmap = BitmapFactory.decodeStream(
-        context.assets.open("photo_2026-10-15_22-06-02.jpg")
-    )
-    private val dayBackground: Bitmap = BitmapFactory.decodeStream(
-        context.assets.open("photo_2026-10-15_22-05-31.jpg")
-    )
+    private val nightBackground: Bitmap = loadBackground("photo_2026-10-15_22-06-02.jpg")
+    private val dayBackground: Bitmap = loadBackground("photo_2026-10-15_22-05-31.jpg")
     private val backgroundRect = RectF()
 
     private val paint = Paint().apply {
@@ -157,6 +153,12 @@ class GameView(context: Context) : View(context) {
         else if (paused) drawCenterMessage(canvas, "ПАУЗА", "КОСНИСЬ ДЛЯ ПРОДОЛЖЕНИЯ")
         else if (gameOver) drawCenterMessage(canvas, "ИГРА ОКОНЧЕНА", "КОСНИСЬ ДЛЯ РЕСТАРТА")
     }
+
+    private fun loadBackground(fileName: String): Bitmap =
+        context.assets.open(fileName).use { input ->
+            BitmapFactory.decodeStream(input)
+                ?: error("Не удалось загрузить фоновое изображение: $fileName")
+        }
 
     private fun drawBackground(canvas: Canvas, bitmap: Bitmap, w: Float, h: Float) {
         // Scale the supplied image to fill the screen, cropping only when aspect ratios differ.
