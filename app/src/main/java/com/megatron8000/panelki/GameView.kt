@@ -2,10 +2,6 @@ package com.megatron8000.panelki
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Rect
-import android.graphics.RectF
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Handler
@@ -50,9 +46,6 @@ class GameView(context: Context) : View(context) {
         isAntiAlias = false
         isFilterBitmap = false
         textAlign = Paint.Align.LEFT
-    }
-    private val skylineBitmap: Bitmap by lazy {
-        BitmapFactory.decodeResource(resources, R.drawable.skyline)
     }
     private val handler = Handler(Looper.getMainLooper())
     private val board = Array(ROWS) { IntArray(COLS) { -1 } }
@@ -184,7 +177,7 @@ class GameView(context: Context) : View(context) {
             }
         }
         clouds.forEach { drawCloud(canvas, it, w, h) }
-        drawReferenceSkyline(canvas, w, h, night = true)
+        drawSkyline(canvas, w, h, night = true)
     }
 
     private fun drawDaySky(canvas: Canvas, w: Float, h: Float) {
@@ -211,24 +204,64 @@ class GameView(context: Context) : View(context) {
             fill(canvas, x + unit * 2, y + unit * 3, x + unit * 6, y + unit * 4, Color.rgb(215, 231, 226))
         }
 
-        drawReferenceSkyline(canvas, w, h, night = false)
+        drawSkyline(canvas, w, h, night = false)
     }
 
-    private fun drawReferenceSkyline(canvas: Canvas, w: Float, h: Float, night: Boolean) {
-        // This bitmap is cropped from the generated reference mockup: left half = day,
-        // right half = night. Keep the source pixels crisp when scaling to the device.
-        val bitmap = skylineBitmap
-        val half = bitmap.width / 2
-        val source = if (night) {
-            Rect(half, 0, bitmap.width, bitmap.height)
-        } else {
-            Rect(0, 0, half, bitmap.height)
+    private fun drawSkyline(canvas: Canvas, w: Float, h: Float, night: Boolean) {
+        val base = h * 0.91f
+        fill(canvas, 0f, base, w, h,
+            if (night) Color.rgb(8, 18, 35) else Color.rgb(93, 139, 111))
+
+        // Layer of distant panel buildings.
+        val xs = floatArrayOf(-0.03f, 0.08f, 0.22f, 0.37f, 0.53f, 0.68f, 0.82f, 0.93f)
+        xs.forEachIndexed { i, x ->
+            val bw = w * (0.105f + (i % 3) * 0.025f)
+            val bh = h * (0.055f + (i % 4) * 0.018f)
+            val left = x * w
+            val top = base - bh
+            val wall = if (night) {
+                intArrayOf(Color.rgb(18, 31, 52), Color.rgb(23, 37, 58), Color.rgb(28, 39, 58))[i % 3]
+            } else {
+                intArrayOf(Color.rgb(164, 184, 183), Color.rgb(196, 196, 176), Color.rgb(151, 173, 181))[i % 3]
+            }
+            fill(canvas, left, top, left + bw, h, wall)
+            // Roof edge and stacked rows of windows.
+            fill(canvas, left, top, left + bw, top + 2f * uiScale,
+                if (night) Color.rgb(39, 53, 73) else Color.rgb(130, 151, 157))
+            val rows = max(2, (bh / (8f * uiScale)).toInt())
+            val cols = max(2, (bw / (8f * uiScale)).toInt())
+            for (row in 0 until rows) for (col in 0 until cols) {
+                val wx = left + (col + 0.7f) * bw / (cols + 0.3f)
+                val wy = top + (row + 0.8f) * bh / (rows + 0.2f)
+                val ww = max(1f, 2.2f * uiScale)
+                val wh = max(1f, 3.2f * uiScale)
+                val lit = (i * 7 + row * 3 + col * 5) % 6 == 0
+                val color = if (night) {
+                    if (lit) Color.rgb(255, 190, 99) else Color.rgb(42, 61, 79)
+                } else {
+                    if (lit) Color.rgb(242, 215, 161) else Color.rgb(93, 132, 151)
+                }
+                fill(canvas, wx, wy, wx + ww, wy + wh, color)
+            }
+            // A few balconies make the silhouette read as Soviet panel housing.
+            if (i % 2 == 0) {
+                val balconyY = top + bh * 0.52f
+                fill(canvas, left + bw * 0.18f, balconyY, left + bw * 0.82f,
+                    balconyY + 1.5f * uiScale, if (night) Color.rgb(50, 64, 79) else Color.rgb(112, 141, 149))
+            }
         }
-        val top = h * 0.68f
-        val bottom = h * 0.925f
-        paint.isFilterBitmap = false
-        canvas.drawBitmap(bitmap, source, RectF(0f, top, w, bottom), paint)
-        fill(canvas, 0f, bottom, w, h, if (night) Color.rgb(8, 20, 35) else Color.rgb(42, 86, 57))
+
+        // Foreground treetops and dark ground band.
+        val treeBase = h * 0.965f
+        for (i in 0..13) {
+            val tx = i * w / 13f
+            val radius = (7f + (i % 3) * 2f) * uiScale
+            val green = if (night) Color.rgb(9, 29, 37) else Color.rgb(73, 125, 75)
+            fill(canvas, tx - radius, treeBase - radius * 1.6f, tx + radius, treeBase, green)
+            fill(canvas, tx - radius * 0.65f, treeBase - radius * 2.1f,
+                tx + radius * 0.65f, treeBase - radius * 0.5f,
+                if (night) Color.rgb(12, 36, 43) else Color.rgb(91, 145, 80))
+        }
     }
 
     private fun drawCloud(canvas: Canvas, cloud: Cloud, w: Float, h: Float) {
