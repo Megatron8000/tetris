@@ -16,13 +16,15 @@ class RetroMusic {
     companion object {
         private const val SAMPLE_RATE = 22050
         private const val CHUNK = 1024
+        // Minor-key motif centered on A minor; lowered third (C) and flattened sixth (F)
+        // replace the brighter major-sounding turns.
         private val MELODY = doubleArrayOf(
             220.00, 0.0, 261.63, 0.0, 196.00, 0.0, 174.61, 0.0,
-            220.00, 0.0, 261.63, 293.66, 261.63, 0.0, 196.00, 0.0,
-            164.81, 0.0, 196.00, 0.0, 220.00, 0.0, 261.63, 0.0,
-            293.66, 0.0, 261.63, 0.0, 220.00, 0.0, 196.00, 0.0
+            164.81, 0.0, 196.00, 0.0, 220.00, 0.0, 196.00, 0.0,
+            174.61, 0.0, 164.81, 0.0, 146.83, 0.0, 164.81, 0.0,
+            196.00, 0.0, 174.61, 0.0, 164.81, 0.0, 146.83, 0.0
         )
-        private val BASS = doubleArrayOf(55.0, 49.0, 43.65, 49.0, 55.0, 65.41, 58.27, 49.0)
+        private val BASS = doubleArrayOf(55.0, 55.0, 43.65, 43.65, 49.0, 49.0, 41.20, 41.20)
     }
 
     private val running = AtomicBoolean(false)
