@@ -145,8 +145,10 @@ class GameView(context: Context) : View(context) {
         drawNightSky(canvas, w, h)
         drawHeader(canvas, w)
         drawBoard(canvas)
-        text(canvas, "РЕКОРД  $best", boardLeft + 2f * uiScale,
-            boardTop + boardHeight + 22f * uiScale, 10f * uiScale, Color.rgb(164, 180, 191))
+        val recordText = "РЕКОРД  $best"
+        val recordSize = 10f * uiScale
+        text(canvas, recordText, (w - measure(recordText, recordSize, false)) / 2f,
+            boardTop + boardHeight + 22f * uiScale, recordSize, Color.rgb(164, 180, 191))
         drawControls(canvas, w, h)
 
         if (!started) drawCenterMessage(canvas, "НОВАЯ ИГРА", "КОСНИСЬ ЭКРАНА")
@@ -203,13 +205,13 @@ class GameView(context: Context) : View(context) {
 
     private fun drawHeader(canvas: Canvas, w: Float) {
         text(canvas, "ПАНЕЛЬКИ", w * 0.075f, 42f * uiScale, 29f * uiScale, Color.rgb(229, 221, 196), true)
-        text(canvas, "ТЕТРИС ПАНЕЛЬНЫХ ДОМОВ", w * 0.08f, 62f * uiScale, 8f * uiScale, Color.rgb(119, 145, 171))
+        text(canvas, "ТЕТРИС ПАНЕЛЬНЫХ ДОМОВ", w * 0.08f, 62f * uiScale, 10f * uiScale, Color.rgb(119, 145, 171))
         text(canvas, "СЧЁТ  $score", w * 0.08f, 91f * uiScale, 14f * uiScale, Color.rgb(244, 189, 111), true)
         text(canvas, "ЛИНИИ  $cleared", w * 0.47f, 91f * uiScale, 12f * uiScale, Color.rgb(196, 204, 205))
         text(canvas, "УР. $level", w * 0.47f, 109f * uiScale, 10f * uiScale, Color.rgb(132, 166, 179))
 
         val nx = w * 0.80f
-        text(canvas, "ДАЛЬШЕ", nx - 2f * uiScale, 64f * uiScale, 9f * uiScale, Color.rgb(145, 166, 187))
+        text(canvas, "ДАЛЬШЕ", nx - 2f * uiScale, 64f * uiScale, 11f * uiScale, Color.rgb(145, 166, 187))
         drawMiniPiece(canvas, nextPiece, nx, 76f * uiScale, 10f * uiScale)
         // Sound toggle and pause controls.
         fill(canvas, w - 78f * uiScale, 16f * uiScale, w - 49f * uiScale, 44f * uiScale,
