@@ -421,7 +421,7 @@ class GameView(context: Context) : View(context) {
         paint.textSize = size
         paint.typeface = android.graphics.Typeface.create(
             "monospace",
-            if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.BOLD
+            android.graphics.Typeface.BOLD
         )
         paint.textAlign = Paint.Align.LEFT
         paint.strokeJoin = Paint.Join.MITER
