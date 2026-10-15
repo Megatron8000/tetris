@@ -42,7 +42,7 @@ class MainActivity : Activity() {
         super.onResume()
         immersiveMode()
         if (::gameView.isInitialized) gameView.resumeGameClock()
-        if (gameView.soundEnabled) music = RetroMusic().also { it.start() }
+        if (gameView.soundEnabled) music = RetroMusic(this).also { it.start() }
     }
 
     override fun onPause() {
