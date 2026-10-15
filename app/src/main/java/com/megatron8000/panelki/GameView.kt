@@ -98,7 +98,6 @@ class GameView(context: Context) : View(context) {
     init {
         isFocusable = true
         setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-        best = max(best, 0)
     }
 
     override fun onAttachedToWindow() {
@@ -146,8 +145,7 @@ class GameView(context: Context) : View(context) {
         drawBoard(canvas)
         val recordText = "РЕКОРД  $best"
         val recordSize = 12f * uiScale
-        text(canvas, recordText, (w - measure(recordText, recordSize, false)) / 2f,
-            boardTop + boardHeight + 22f * uiScale, recordSize, Color.rgb(164, 180, 191))
+        text(canvas, recordText, (w - measure(recordText, recordSize)) / 2f, boardTop + boardHeight + 22f * uiScale, recordSize)
         drawControls(canvas, w, h)
 
         if (!started) drawCenterMessage(canvas, "НОВАЯ ИГРА", "КОСНИСЬ ЭКРАНА")
@@ -175,14 +173,14 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawHeader(canvas: Canvas, w: Float) {
-        text(canvas, "ПАНЕЛЬКИ", w * 0.075f, 42f * uiScale, 29f * uiScale, Color.rgb(229, 221, 196), true)
-        text(canvas, "ТЕТРИС ПАНЕЛЬНЫХ ДОМОВ", w * 0.08f, 62f * uiScale, 12f * uiScale, Color.rgb(145, 166, 187))
-        text(canvas, "СЧЁТ  $score", w * 0.08f, 91f * uiScale, 16f * uiScale, Color.rgb(244, 189, 111), true)
-        text(canvas, "ЛИНИИ  $cleared", w * 0.47f, 91f * uiScale, 14f * uiScale, Color.rgb(196, 204, 205))
-        text(canvas, "УР. $level", w * 0.47f, 109f * uiScale, 10f * uiScale, Color.rgb(132, 166, 179))
+        text(canvas, "ПАНЕЛЬКИ", w * 0.075f, 42f * uiScale, 29f * uiScale)
+        text(canvas, "ТЕТРИС ПАНЕЛЬНЫХ ДОМОВ", w * 0.08f, 62f * uiScale, 12f * uiScale)
+        text(canvas, "СЧЁТ  $score", w * 0.08f, 91f * uiScale, 16f * uiScale)
+        text(canvas, "ЛИНИИ  $cleared", w * 0.47f, 91f * uiScale, 14f * uiScale)
+        text(canvas, "УР. $level", w * 0.47f, 109f * uiScale, 10f * uiScale)
 
         val nx = w * 0.80f
-        text(canvas, "ДАЛЬШЕ", nx - 2f * uiScale, 64f * uiScale, 12f * uiScale, Color.rgb(145, 166, 187))
+        text(canvas, "ДАЛЬШЕ", nx - 2f * uiScale, 64f * uiScale, 12f * uiScale)
         drawMiniPiece(canvas, nextPiece, nx, 76f * uiScale, 10f * uiScale)
         // Sound toggle and pause controls.
         fill(canvas, w - 78f * uiScale, 16f * uiScale, w - 49f * uiScale, 44f * uiScale,
@@ -338,12 +336,11 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawControls(canvas: Canvas, w: Float, h: Float) {
-        val labels = arrayOf("", "", "", "", "DROP")
         val centers = floatArrayOf(0.10f, 0.30f, 0.50f, 0.70f, 0.90f)
         val buttonW = w * 0.17f
         val buttonH = 48f * uiScale
         val centerY = h - 48f * uiScale
-        labels.forEachIndexed { index, label ->
+        centers.indices.forEach { index ->
             val cx = centers[index] * w
             val left = cx - buttonW / 2f
             val top = centerY - buttonH / 2f
@@ -354,9 +351,10 @@ class GameView(context: Context) : View(context) {
             if (index < 4) {
                 drawControlIcon(canvas, index, cx, centerY, 21f * uiScale, Color.rgb(244, 241, 225))
             } else {
+                val label = "DROP"
                 val textSize = 10f * uiScale
-                val tw = measure(label, textSize, true)
-                text(canvas, label, cx - tw / 2f, centerY + textSize * 0.35f, textSize, Color.rgb(244, 241, 225), true)
+                val tw = measure(label, textSize)
+                text(canvas, label, cx - tw / 2f, centerY + textSize * 0.35f, textSize)
             }
         }
         // Helper caption intentionally removed.
@@ -407,9 +405,9 @@ class GameView(context: Context) : View(context) {
         fill(canvas, cx - boxW / 2f, cy - boxH / 2f, cx + boxW / 2f, cy + boxH / 2f, Color.rgb(9, 17, 31))
         fill(canvas, cx - boxW / 2f, cy - boxH / 2f, cx + boxW / 2f, cy - boxH / 2f + 3f * uiScale, Color.rgb(207, 158, 97))
         val titleSize = 17f * uiScale
-        text(canvas, title, cx - measure(title, titleSize, true) / 2f, cy - 4f * uiScale, titleSize, Color.rgb(245, 198, 127), true)
+        text(canvas, title, cx - measure(title, titleSize) / 2f, cy - 4f * uiScale, titleSize)
         val subSize = 8.2f * uiScale
-        text(canvas, subtitle, cx - measure(subtitle, subSize, false) / 2f, cy + 21f * uiScale, subSize, Color.rgb(183, 197, 202))
+        text(canvas, subtitle, cx - measure(subtitle, subSize) / 2f, cy + 21f * uiScale, subSize)
     }
 
     private fun fill(canvas: Canvas, l: Float, t: Float, r: Float, b: Float, color: Int) {
@@ -419,7 +417,7 @@ class GameView(context: Context) : View(context) {
         canvas.drawRect(l, t, r, b, paint)
     }
 
-    private fun text(canvas: Canvas, value: String, x: Float, baseline: Float, size: Float, color: Int, bold: Boolean = false) {
+    private fun text(canvas: Canvas, value: String, x: Float, baseline: Float, size: Float) {
         paint.textSize = size
         paint.typeface = android.graphics.Typeface.create(
             "monospace",
@@ -438,7 +436,7 @@ class GameView(context: Context) : View(context) {
         canvas.drawText(value, x, baseline, paint)
     }
 
-    private fun measure(value: String, size: Float, bold: Boolean): Float {
+    private fun measure(value: String, size: Float): Float {
         paint.textSize = size
         paint.typeface = android.graphics.Typeface.create("monospace", android.graphics.Typeface.BOLD)
         return paint.measureText(value)
@@ -496,7 +494,7 @@ class GameView(context: Context) : View(context) {
             if ((mask and (0x8000 shr (y * 4 + x))) != 0) {
                 val gx = px + x
                 val gy = py + y
-                if (gx < 0 || gx >= COLS || gy >= ROWS) return false
+                if (gx !in 0 until COLS || gy >= ROWS) return false
                 if (gy >= 0 && board[gy][gx] >= 0) return false
             }
         }
@@ -628,11 +626,17 @@ class GameView(context: Context) : View(context) {
         }
     }
 
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 parent?.requestDisallowInterceptTouchEvent(true)
                 onGameTap(event.x, event.y)
+                performClick()
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> return true
