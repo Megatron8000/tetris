@@ -146,7 +146,7 @@ class GameView(context: Context) : View(context) {
         drawHeader(canvas, w)
         drawBoard(canvas)
         val recordText = "РЕКОРД  $best"
-        val recordSize = 10f * uiScale
+        val recordSize = 12f * uiScale
         text(canvas, recordText, (w - measure(recordText, recordSize, false)) / 2f,
             boardTop + boardHeight + 22f * uiScale, recordSize, Color.rgb(164, 180, 191))
         drawControls(canvas, w, h)
@@ -205,13 +205,13 @@ class GameView(context: Context) : View(context) {
 
     private fun drawHeader(canvas: Canvas, w: Float) {
         text(canvas, "ПАНЕЛЬКИ", w * 0.075f, 42f * uiScale, 29f * uiScale, Color.rgb(229, 221, 196), true)
-        text(canvas, "ТЕТРИС ПАНЕЛЬНЫХ ДОМОВ", w * 0.08f, 62f * uiScale, 10f * uiScale, Color.rgb(145, 166, 187))
-        text(canvas, "СЧЁТ  $score", w * 0.08f, 91f * uiScale, 14f * uiScale, Color.rgb(244, 189, 111), true)
-        text(canvas, "ЛИНИИ  $cleared", w * 0.47f, 91f * uiScale, 12f * uiScale, Color.rgb(196, 204, 205))
+        text(canvas, "ТЕТРИС ПАНЕЛЬНЫХ ДОМОВ", w * 0.08f, 62f * uiScale, 12f * uiScale, Color.rgb(145, 166, 187))
+        text(canvas, "СЧЁТ  $score", w * 0.08f, 91f * uiScale, 16f * uiScale, Color.rgb(244, 189, 111), true)
+        text(canvas, "ЛИНИИ  $cleared", w * 0.47f, 91f * uiScale, 14f * uiScale, Color.rgb(196, 204, 205))
         text(canvas, "УР. $level", w * 0.47f, 109f * uiScale, 10f * uiScale, Color.rgb(132, 166, 179))
 
         val nx = w * 0.80f
-        text(canvas, "ДАЛЬШЕ", nx - 2f * uiScale, 64f * uiScale, 11f * uiScale, Color.rgb(145, 166, 187))
+        text(canvas, "ДАЛЬШЕ", nx - 2f * uiScale, 64f * uiScale, 12f * uiScale, Color.rgb(145, 166, 187))
         drawMiniPiece(canvas, nextPiece, nx, 76f * uiScale, 10f * uiScale)
         // Sound toggle and pause controls.
         fill(canvas, w - 78f * uiScale, 16f * uiScale, w - 49f * uiScale, 44f * uiScale,
@@ -384,8 +384,7 @@ class GameView(context: Context) : View(context) {
             val tw = measure(label, textSize, true)
             text(canvas, label, cx - tw / 2f, centerY + textSize * 0.35f, textSize, Color.rgb(231, 219, 187), true)
         }
-        text(canvas, "ДВИГАЙ • ПОВОРАЧИВАЙ", w * 0.08f,
-            h - 85f * uiScale, 8.5f * uiScale, Color.rgb(104, 127, 153))
+        // Helper caption intentionally removed.
     }
 
     private fun drawCenterMessage(canvas: Canvas, title: String, subtitle: String) {
