@@ -556,20 +556,20 @@ class GameView(context: Context) : View(context) {
     private fun onGameTap(x: Float, y: Float) {
         val w = width.toFloat()
         val h = height.toFloat()
-        if (!started || gameOver) {
-            startNewGame()
-            return
-        }
         if (y < 52f * uiScale && x > w - 90f * uiScale) {
             if (x < w - 46f * uiScale) {
                 soundEnabled = !soundEnabled
                 preferences.edit().putBoolean("sound_enabled", soundEnabled).apply()
                 onSoundToggle?.invoke(soundEnabled)
-            } else {
+            } else if (started && !gameOver) {
                 paused = !paused
                 lastFrameTime = System.currentTimeMillis()
             }
             invalidate()
+            return
+        }
+        if (!started || gameOver) {
+            startNewGame()
             return
         }
         if (paused) {
